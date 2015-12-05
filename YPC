@@ -21,7 +21,7 @@ frmdata=$(
 	yad --width=400 \
 	 --title="Youtube plugin creator for Kodi - marduk191" \
 	 --text="Please enter your details:" \
-	 --image="RA.jpg" \
+	 --image="./bin/RA.jpg" \
 	 --form --date-format="%-d %B %Y" --item-separator="," \
 	 --field="Plugin ID:" \
 	 --field="Channel Name:" \

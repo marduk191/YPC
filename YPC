@@ -1,0 +1,67 @@
+#!/bin/bash
+## Kodi youtube channel maker
+## By marduk191
+## email: marduk191@gmail.com
+########################################
+## icon.png is 256x256 uncompressed   ##
+## fanart.jpg is 1280x720 for 720p etc##
+########################################
+
+#Check for yad
+printf "%s\n" "Checking for yad:"
+
+if ! dpkg-query -W yad | grep . 
+then printf "%s\n" "yad isn't installed. Setting up yad." 
+     gksudo apt-get install yad 
+else printf "%s\n" "yad is already installed!"
+fi
+
+#Create inputs
+frmdata=$(
+	yad --width=400 \
+	 --title="Youtube plugin creator for Kodi - marduk191" \
+	 --text="Please enter your details:" \
+	 --image="RA.jpg" \
+	 --form --date-format="%-d %B %Y" --item-separator="," \
+	 --field="Plugin ID:" \
+	 --field="Channel Name:" \
+	 --field="Version Number:" \
+	 --field="Description:" \
+	 --field="Forum:" \
+	 --field="Website" \
+	 --field="Icon:FL" \
+	 --field="Fanart:FL" \
+	 --button="Build" \
+	 "Youtube username" "Channel name" "Plugin version number" "Channel description" "Forum URL" "Website URL" "icon.png" "fanart.jpg")
+
+#set variables
+id=$(printf "%s" "$frmdata" | awk 'BEGIN {FS="|" } { print $1 }')
+channel=$(printf "%s" "$frmdata" | awk 'BEGIN {FS="|" } { print $2 }')
+vernumber=$(printf "%s" "$frmdata" | awk 'BEGIN {FS="|" } { print $3 }')
+desc=$(printf "%s" "$frmdata" | awk 'BEGIN {FS="|" } { print $4 }')
+NOW=$(date +"%m%d%y")
+furl=$(printf "%s" "$frmdata" | awk 'BEGIN {FS="|" } { print $5 }')
+wurl=$(printf "%s" "$frmdata" | awk 'BEGIN {FS="|" } { print $6 }')
+iconloc=$(printf "%s" "$frmdata" | awk 'BEGIN {FS="|" } { print $7 }') 
+artloc=$(printf "%s" "$frmdata" | awk 'BEGIN {FS="|" } { print $8 }')
+
+#Create a working directory
+mkdir ./Out/plugin.video.$id/
+cp -R ./Source/plugin.video.sample/* ./Out/plugin.video.$id/
+
+#set information from input form
+sed -i "s|maryoutube|$id|g" ./Out/plugin.video.$id/addon.xml
+sed -i "s|maryoutube|$id|g" ./Out/plugin.video.$id/default.py
+sed -i "s|thisisthename|$channel|g" ./Out/plugin.video.$id/addon.xml
+sed -i "s|thisisthename|$channel|g" ./Out/plugin.video.$id/default.py
+sed -i "s|thisistheversion|$vernumber|g" ./Out/plugin.video.$id/addon.xml
+sed -i "s|thisisthedescription|$desc|g" ./Out/plugin.video.$id/addon.xml
+sed -i "s|forumurl|$furl|g" ./Out/plugin.video.$id/addon.xml
+sed -i "s|websiteurl|$wurl|g" ./Out/plugin.video.$id/addon.xml
+
+#Copy files
+cp $iconloc ./Out/plugin.video.$id/
+cp $artloc ./Out/plugin.video.$id/
+cd ./Out/
+zip -r -q "plugin.video.$id-$vernumber.zip" ./*
+

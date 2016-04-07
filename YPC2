@@ -29,13 +29,12 @@ fi
 #making temp directories
 res1=$(mktemp --tmpdir ypc1.XXXXXXXX)
 res2=$(mktemp --tmpdir ypc2.XXXXXXXX)
+res3=$(mktemp --tmpdir ypc3.XXXXXXXX)
 
 #setting shared memory address
 smaddr=123491
  
 #menu code
-#read changelog into variable
-chglog="$(<./changelog.txt)"
 # Starting the first tab
     yad --plug=$smaddr \
     --tabnum=1 \
@@ -56,9 +55,8 @@ chglog="$(<./changelog.txt)"
     --field="Source" \
     --field="Icon:FL" \
     --field="Fanart:FL" \
-    --field="Changelog:":TXT \
     "Plugin ID" "name shown in menu" "Plugin version number" "your name here" "Summary here" "Channel description" \
-    "Disclaimer" "en" "GPL" "Forum URL" "Website URL" "Email address" "Source url" "icon.jpg" "fanart.jpg" "$chglog" > $res1 &  
+    "Disclaimer" "en" "GPL" "Forum URL" "Website URL" "Email address" "Source url" "icon.jpg" "fanart.jpg" > $res1 &  
  
  # Starting Yad for the second tab
     yad --plug=$smaddr \
@@ -78,12 +76,22 @@ chglog="$(<./changelog.txt)"
     "Display name" 'user!channel!playlist!search!play' "URL or name" "icon.jpg" "fanart.jpg" "Display Name" \
     'user!channel!playlist!search!play' "URL or name" "icon.jpg" "fanart.jpg" > $res2 &
 
+#read changelog into variable
+chglog="$(<./changelog.txt)"
+# Starting the third tab
+    yad --plug=$smaddr \
+    --tabnum=3 \
+    --form \
+    --field="Changelog:":TXT \
+    "$chglog" > $res3 &  
+
 # Starting the read yad window
     yad --key=$smaddr \
     --center \
     --notebook \
     --tab="Plugin" \
     --tab="Channels" \
+    --tab="Changelog" \
     --title="Youtube plugin creator for Kodi - marduk191" \
     --image="./source/bin/head.jpg"
 
@@ -103,7 +111,7 @@ xmlemail=$(cat $res1 | awk 'BEGIN {FS="|" } { print $12 }')
 xmlsource=$(cat $res1 | awk 'BEGIN {FS="|" } { print $13 }')
 iconloc=$(cat $res1 | awk 'BEGIN {FS="|" } { print $14 }') 
 artloc=$(cat $res1 | awk 'BEGIN {FS="|" } { print $15 }')
-chngd=$(cat $res1 | awk 'BEGIN {FS="|" } { print $16 }')
+
 
 #set channel variables [COMPLETE]
 title=$(cat $res2 | awk 'BEGIN {FS="|" } { print $1 }')
@@ -116,6 +124,9 @@ url2=$(cat $res2 | awk 'BEGIN {FS="|" } { print $8 }')
 ltype2=$(cat $res2 | awk 'BEGIN {FS="|" } { print $7 }')
 thumbnail2=$(cat $res2 | awk 'BEGIN {FS="|" } { print $9 }')
 background2=$(cat $res2 | awk 'BEGIN {FS="|" } { print $10 }')
+
+#changelog, read existing one
+chngd=$(cat $res3 | awk 'BEGIN {FS="|" } { print $16 }')
 
 #ENGINES
 #XML engine.

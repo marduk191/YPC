@@ -1,0 +1,235 @@
+#!/bin/bash
+## Kodi youtube channel maker
+## Version 2.0
+## By marduk191
+## email: marduk191@gmail.com
+
+#enable for debug
+#set -x
+
+#Checking for yad
+printf "%s\n" "Checking for yad:"
+
+if ! dpkg-query -W yad | grep . 
+then printf "%s\n" "yad isn't installed. Setting up yad." 
+     gksudo apt-get install yad 
+else printf "%s\n" "yad is already installed!"
+fi
+
+#Checking for Out directory
+if ! test -e Out
+then mkdir Out
+fi
+
+#Checking for changelog.txt
+if ! test -e changelog.txt
+then touch changelog.txt 
+fi
+
+#making temp directories
+res1=$(mktemp --tmpdir ypc1.XXXXXXXX)
+res2=$(mktemp --tmpdir ypc2.XXXXXXXX)
+
+#setting shared memory address
+smaddr=123491
+ 
+#menu code
+#read changelog into variable
+chglog="$(<./changelog.txt)"
+# Starting the first tab
+    yad --plug=$smaddr \
+    --tabnum=1 \
+    --text="Plugin" \
+    --form \
+    --field="Plugin ID:" \
+    --field="Display name:" \
+    --field="Version Number:" \
+    --field="Provider:" \
+    --field="Summary:" \
+    --field="Description:" \
+    --field="Disclaimer:" \
+    --field="Language:" \
+    --field="License:" \
+    --field="Forum:" \
+    --field="Website" \
+    --field="Email:" \
+    --field="Source" \
+    --field="Icon:FL" \
+    --field="Fanart:FL" \
+    --field="Changelog:":TXT \
+    "Plugin ID" "name shown in menu" "Plugin version number" "your name here" "Summary here" "Channel description" \
+    "Disclaimer" "en" "GPL" "Forum URL" "Website URL" "Email address" "Source url" "icon.jpg" "fanart.jpg" "$chglog" > $res1 &  
+ 
+ # Starting Yad for the second tab
+    yad --plug=$smaddr \
+    --tabnum=2 \
+    --text="Channels" \
+    --form \
+    --field="Channel 1:" \
+    --field="Type:":CB \
+    --field="URL:" \
+    --field="Icon:FL" \
+    --field="Fanart:FL" \
+    --field="Channel 2:" \
+    --field="Type:":CB \
+    --field="URL:" \
+    --field="Icon:FL" \
+    --field="Fanart:FL" \
+    "Display name" 'user!channel!playlist!search!play' "URL or name" "icon.jpg" "fanart.jpg" "Display Name" \
+    'user!channel!playlist!search!play' "URL or name" "icon.jpg" "fanart.jpg" > $res2 &
+
+# Starting the read yad window
+    yad --key=$smaddr \
+    --center \
+    --notebook \
+    --tab="Plugin" \
+    --tab="Channels" \
+    --title="Youtube plugin creator for Kodi - marduk191" \
+    --image="./source/bin/head.jpg"
+
+#set plugin variables [COMPLETE]
+xmlid=$(cat $res1 | awk 'BEGIN {FS="|" } { print $1 }')
+xmlname=$(cat $res1 | awk 'BEGIN {FS="|" } { print $2 }')
+xmlversion=$(cat $res1 | awk 'BEGIN {FS="|" } { print $3 }')
+xmlprovider=$(cat $res1 | awk 'BEGIN {FS="|" } { print $4 }')
+xmlsummary=$(cat $res1 | awk 'BEGIN {FS="|" } { print $5 }')
+xmldescription=$(cat $res1 | awk 'BEGIN {FS="|" } { print $6 }')
+xmldisclaimer=$(cat $res1 | awk 'BEGIN {FS="|" } { print $7 }')
+xmllanguage=$(cat $res1 | awk 'BEGIN {FS="|" } { print $8 }')
+xmllicense=$(cat $res1 | awk 'BEGIN {FS="|" } { print $9 }')
+xmlforum=$(cat $res1 | awk 'BEGIN {FS="|" } { print $10 }')
+xmlwebsite=$(cat $res1 | awk 'BEGIN {FS="|" } { print $11 }')
+xmlemail=$(cat $res1 | awk 'BEGIN {FS="|" } { print $12 }')
+xmlsource=$(cat $res1 | awk 'BEGIN {FS="|" } { print $13 }')
+iconloc=$(cat $res1 | awk 'BEGIN {FS="|" } { print $14 }') 
+artloc=$(cat $res1 | awk 'BEGIN {FS="|" } { print $15 }')
+chngd=$(cat $res1 | awk 'BEGIN {FS="|" } { print $16 }')
+
+#set channel variables [COMPLETE]
+title=$(cat $res2 | awk 'BEGIN {FS="|" } { print $1 }')
+url=$(cat $res2 | awk 'BEGIN {FS="|" } { print $3 }')
+ltype=$(cat $res2 | awk 'BEGIN {FS="|" } { print $2 }')
+thumbnail1=$(cat $res2 | awk 'BEGIN {FS="|" } { print $4 }')
+background1=$(cat $res2 | awk 'BEGIN {FS="|" } { print $5 }')
+title2=$(cat $res2 | awk 'BEGIN {FS="|" } { print $6 }')
+url2=$(cat $res2 | awk 'BEGIN {FS="|" } { print $8 }')
+ltype2=$(cat $res2 | awk 'BEGIN {FS="|" } { print $7 }')
+thumbnail2=$(cat $res2 | awk 'BEGIN {FS="|" } { print $9 }')
+background2=$(cat $res2 | awk 'BEGIN {FS="|" } { print $10 }')
+
+#ENGINES
+#XML engine.
+xmleng='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon
+  id="plugin.video.%s"
+  name="%s"
+  version="%s"
+  provider-name="%s">
+    <requires>
+        <import addon="xbmc.python" version="2.24.0"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="addon.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="en_GB">%s</summary>
+        <description lang="en_GB">%s</description>
+        <disclaimer lang="en_GB">%s</disclaimer>
+        <language>%s</language>
+        <platform>all</platform>
+        <license>%s</license>
+        <forum>%s</forum>
+        <website>%s</website>
+        <email>%s</email>
+        <source>%s</source>
+    </extension>
+</addon>
+'
+
+#Python engine
+#Generate the main python code
+pymain='# -*- coding: utf-8 -*-
+#------------------------------------------------------------
+
+import os
+import sys
+import plugintools
+import xbmc,xbmcaddon
+from addon.common.addon import Addon
+
+addonID = "plugin.video.%s"
+addon = Addon(addonID, sys.argv)
+local = xbmcaddon.Addon(id=addonID)
+icon = local.getAddonInfo("icon")
+fanart = local.getAddonInfo("fanart")
+#fanart = xbmc.translatePath(os.path.join("special://home/addons/plugin.video.%s", "fanart.jpg"))
+
+# Entry point
+def run():
+    plugintools.log("%s.run")
+    
+    # Get params
+    params = plugintools.get_params()
+    
+    if params.get("action") is None:
+        main_list(params)
+    else:
+        action = params.get("action")
+        exec action+"(params)"
+    
+    plugintools.close_item_list()
+
+# Main menu
+def main_list(params):
+    plugintools.log("%s.main_list "+repr(params))
+
+'
+#Generate the channels part of the python code.
+pyteng='    plugintools.add_item( 
+             #action="", 
+             title="%s",
+             url="plugin://plugin.video.youtube/%s/%s/",
+             thumbnail=xbmc.translatePath(os.path.join("special://home/addons/plugin.video.$xmlid/thumbnails", "%s")),
+             fanart=xbmc.translatePath(os.path.join("special://home/addons/plugin.video.$xmlid/fanart", "%s")),
+             folder=True )
+
+'
+
+#Create a working directory
+mkdir -p ./Out/plugin.video.$xmlid
+cp  ./source/bin/plugintools.py ./Out/plugin.video.$xmlid/plugintools.py
+cd ./Out/plugin.video.$xmlid
+
+#Create files
+#XML
+printf "$xmleng" "$xmlid" "$xmlname" "$xmlversion" "$xmlprovider" \
+"$xmlsummary" "$xmldescription" "$xmldisclaimer" "$xmllanguage" \
+"$xmllicense" "$xmlforum" "$xmlwebsite" "$xmlemail" "$xmlsource" > addon.xml
+
+#Python
+printf "$pymain" "$xmlid" "$xmlid" "$xmlid" "$xmlid" > addon.py
+printf "$pyteng" "$title" "$url" "$ltype" "icon1.jpg" "bg1.jpg" >> addon.py
+printf "$pyteng" "$title2" "$url2" "$ltype2" "icon2.jpg" "bg2.jpg" >> addon.py
+printf "%s\n" "run()" >> addon.py
+
+#changelog
+printf "$chngd" > changelog.txt
+
+#copy images into project
+#Copy channel icons
+mkdir -p thumbnails
+cp $thumbnail1 ./thumbnails/icon1.jpg
+cp $thumbnail2 ./thumbnails/icon2.jpg
+
+#Copy channel backgrounds
+mkdir -p fanart
+cp $background1 ./fanart/bg1.jpg
+cp $background2 ./fanart/bg2.jpg
+
+#Copy plugin icon and fanart
+cp $iconloc ./icon.jpg
+cp $artloc ./fanart.jpg
+
+#make the archive
+zip -r -q "plugin.video.$xmlid-$xmlversion.zip" ./*
+pkill yad
